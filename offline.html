@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#3498db">
+    <title>Погодка от Никитки - Офлайн режим</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2980b9;
+            --text-color: #333;
+            --background-color: #f9f9f9;
+            --card-background: #fff;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #3498db;
+            --secondary-color: #1d6fa5;
+            --text-color: #f5f5f5;
+            --background-color: #222;
+            --card-background: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin: 20px 0;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        p {
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        img {
+            max-width: 150px;
+            margin: 20px 0;
+        }
+
+        .button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        footer {
+            margin-top: 30px;
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Нет подключения к интернету</h1>
+            <img src="./offline-image.png" alt="Нет подключения">
+            <p>Извините, не удается подключиться к серверу погоды. Пожалуйста, проверьте ваше интернет-соединение и попробуйте снова.</p>
+            <p>Вы можете просматривать ранее загруженные данные в автономном режиме.</p>
+            <button class="button" onclick="window.location.reload()">Повторить попытку</button>
+        </div>
+        <footer>
+            &copy; 2025 Погодка от Никитки - PWA погодное приложение
+        </footer>
+    </div>
+    <script>
+        // Проверяем сохраненную тему
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+        });
+    </script>
+</body>
+</html>

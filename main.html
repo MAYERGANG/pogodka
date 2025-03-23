@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Современное погодное приложение с прогнозом, интерактивной картой, анализом качества воздуха и уведомлениями">
+    <meta name="theme-color" content="#3498db">
+    
+    <!-- PWA meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Погодка от Никитки">
+    <link rel="apple-touch-icon" href="./icon-192x192.png">
+    <link rel="manifest" href="./manifest.json">
+    
+    <title>Погодка от Никитки</title>
+    
+    <!-- Подключение внешних стилей -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-cloud-sun"></i>
+                <h1>Погодка от Никитки</h1>
+            </div>
+            <form id="search-form" class="search-form">
+                <input type="text" id="city-input" placeholder="Введите город...">
+                <button type="submit"><i class="fas fa-search"></i></button>
+            </form>
+            <button id="geolocation-button" class="geolocation-button" title="Ваше местоположение">
+                <i class="fas fa-location-crosshairs"></i>
+            </button>
+        </header>
+        
+        <nav class="tab-controls">
+            <button class="tab-btn active" data-tab="current-weather">
+                <i class="fas fa-cloud-sun"></i>
+                <span>Текущая погода</span>
+            </button>
+            <button class="tab-btn" data-tab="forecast">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Прогноз</span>
+            </button>
+            <button class="tab-btn" data-tab="map">
+                <i class="fas fa-map-marked-alt"></i>
+                <span>Карта</span>
+            </button>
+            <button class="tab-btn" data-tab="air-quality">
+                <i class="fas fa-wind"></i>
+                <span>Качество воздуха</span>
+            </button>
+        </nav>
+        
+        <main>
+            <!-- Секция текущей погоды -->
+            <section id="current-weather" class="tab-content active">
+                <div class="weather-card">
+                    <div class="current-weather-info">
+                        <div class="weather-location">
+                            <h2 id="city-name">Город</h2>
+                            <span id="date-time">Дата и время</span>
+                        </div>
+                        <div class="weather-main">
+                            <img id="weather-icon" src="" alt="Погода">
+                            <div class="temperature">
+                                <span id="temperature">--</span>
+                                <span class="unit">°C</span>
+                            </div>
+                            <div class="weather-description">
+                                <span id="weather-description">Описание погоды</span>
+                                <div class="min-max">
+                                    <span id="temp-max">--</span>/<span id="temp-min">--</span>°C
+                                </div>
+                            </div>
+                        </div>
+                        <div class="weather-details">
+                            <div class="detail">
+                                <i class="fas fa-temperature-low"></i>
+                                <span>Ощущается как: <span id="feels-like">--</span>°C</span>
+                            </div>
+                            <div class="detail">
+                                <i class="fas fa-tint"></i>
+                                <span>Влажность: <span id="humidity">--</span>%</span>
+                            </div>
+                            <div class="detail">
+                                <i class="fas fa-wind"></i>
+                                <span>Ветер: <span id="wind-speed">--</span> м/с</span>
+                            </div>
+                            <div class="detail">
+                                <i class="fas fa-arrow-up"></i>
+                                <span>Направление: <span id="wind-direction">--</span></span>
+                            </div>
+                            <div class="detail">
+                                <i class="fas fa-compress-alt"></i>
+                                <span>Давление: <span id="pressure">--</span> мм рт.ст.</span>
+                            </div>
+                            <div class="detail">
+                                <i class="fas fa-eye"></i>
+                                <span>Видимость: <span id="visibility">--</span> км</span>
+                            </div>
+                            <div class="detail">
+                                <i class="fas fa-sun"></i>
+                                <span>Восход: <span id="sunrise">--:--</span></span>
+                            </div>
+                            <div class="detail">
+                                <i class="fas fa-moon"></i>
+                                <span>Закат: <span id="sunset">--:--</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="uv-index-card">
+                        <h3>УФ индекс</h3>
+                        <div class="uv-meter">
+                            <div class="uv-value" id="uv-value">--</div>
+                            <div class="uv-scale">
+                                <div class="uv-level low">Низкий</div>
+                                <div class="uv-level moderate">Средний</div>
+                                <div class="uv-level high">Высокий</div>
+                                <div class="uv-level very-high">Очень высокий</div>
+                                <div class="uv-level extreme">Экстремальный</div>
+                            </div>
+                            <div class="uv-indicator" id="uv-indicator"></div>
+                        </div>
+                        <div class="uv-advice" id="uv-advice">Загрузка рекомендаций...</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Секция прогноза погоды -->
+            <section id="forecast" class="tab-content">
+                <div class="forecast-container">
+                    <div class="forecast-header">
+                        <h2>Прогноз на 5 дней</h2>
+                        <div class="forecast-toggle">
+                            <button id="hourly-forecast-btn" class="active">Почасовой</button>
+                            <button id="daily-forecast-btn">По дням</button>
+                        </div>
+                    </div>
+                    <div id="hourly-forecast" class="forecast-items"></div>
+                    <div id="daily-forecast" class="forecast-items" style="display: none;"></div>
+                    <div class="temperature-chart-container">
+                        <h3>График температуры</h3>
+                        <canvas id="temperature-chart"></canvas>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Секция интерактивной карты -->
+            <section id="map" class="tab-content">
+                <div class="map-container">
+                    <div id="weather-map"></div>
+                    <div class="map-controls">
+                        <div class="map-layers">
+                            <button class="map-layer-btn active" data-layer="temp">Температура</button>
+                            <button class="map-layer-btn" data-layer="precipitation">Осадки</button>
+                            <button class="map-layer-btn" data-layer="wind">Ветер</button>
+                            <button class="map-layer-btn" data-layer="clouds">Облачность</button>
+                        </div>
+                        <div class="map-legend" id="map-legend">
+                            <!-- Легенда карты будет добавлена динамически -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Секция качества воздуха -->
+            <section id="air-quality" class="tab-content">
+                <div class="air-quality-container">
+                    <div class="air-quality-card">
+                        <h2>Качество воздуха</h2>
+                        <div class="aqi-main">
+                            <div class="aqi-circle">
+                                <span id="aqi-value">--</span>
+                                <span id="aqi-text">--</span>
+                            </div>
+                            <div class="aqi-description">
+                                <p id="aqi-description">Загрузка данных о качестве воздуха...</p>
+                            </div>
+                        </div>
+                        <div class="pollutants">
+                            <h3>Загрязнители</h3>
+                            <div class="pollutant-items">
+                                <div class="pollutant-item">
+                                    <span class="pollutant-name">CO</span>
+                                    <span id="co-value" class="pollutant-value">--</span>
+                                    <div class="pollutant-bar">
+                                        <div id="co-bar" class="pollutant-level"></div>
+                                    </div>
+                                </div>
+                                <div class="pollutant-item">
+                                    <span class="pollutant-name">NO2</span>
+                                    <span id="no2-value" class="pollutant-value">--</span>
+                                    <div class="pollutant-bar">
+                                        <div id="no2-bar" class="pollutant-level"></div>
+                                    </div>
+                                </div>
+                                <div class="pollutant-item">
+                                    <span class="pollutant-name">O3</span>
+                                    <span id="o3-value" class="pollutant-value">--</span>
+                                    <div class="pollutant-bar">
+                                        <div id="o3-bar" class="pollutant-level"></div>
+                                    </div>
+                                </div>
+                                <div class="pollutant-item">
+                                    <span class="pollutant-name">PM2.5</span>
+                                    <span id="pm25-value" class="pollutant-value">--</span>
+                                    <div class="pollutant-bar">
+                                        <div id="pm25-bar" class="pollutant-level"></div>
+                                    </div>
+                                </div>
+                                <div class="pollutant-item">
+                                    <span class="pollutant-name">PM10</span>
+                                    <span id="pm10-value" class="pollutant-value">--</span>
+                                    <div class="pollutant-bar">
+                                        <div id="pm10-bar" class="pollutant-level"></div>
+                                    </div>
+                                </div>
+                                <div class="pollutant-item">
+                                    <span class="pollutant-name">SO2</span>
+                                    <span id="so2-value" class="pollutant-value">--</span>
+                                    <div class="pollutant-bar">
+                                        <div id="so2-bar" class="pollutant-level"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="air-quality-advice">
+                            <h3>Рекомендации</h3>
+                            <p id="air-quality-advice">Загрузка рекомендаций...</p>
+                        </div>
+                    </div>
+                    <div class="health-impact">
+                        <h3>Влияние на здоровье</h3>
+                        <div class="health-impact-items">
+                            <div class="health-impact-item">
+                                <i class="fas fa-child"></i>
+                                <div>
+                                    <h4>Дети и пожилые люди</h4>
+                                    <p id="health-impact-sensitive">Загрузка информации...</p>
+                                </div>
+                            </div>
+                            <div class="health-impact-item">
+                                <i class="fas fa-running"></i>
+                                <div>
+                                    <h4>Физическая активность</h4>
+                                    <p id="health-impact-activity">Загрузка информации...</p>
+                                </div>
+                            </div>
+                            <div class="health-impact-item">
+                                <i class="fas fa-lungs"></i>
+                                <div>
+                                    <h4>Дыхательная система</h4>
+                                    <p id="health-impact-respiratory">Загрузка информации...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <!-- Система уведомлений -->
+        <div id="notification-container" class="notification-container"></div>
+        
+        <!-- Модальное окно настроек уведомлений -->
+        <div id="notification-settings-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Настройки уведомлений</h2>
+                    <span class="close-modal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-section">
+                        <h3>Погодные предупреждения</h3>
+                        <div class="settings-item">
+                            <input type="checkbox" id="notify-rain" checked>
+                            <label for="notify-rain">Осадки</label>
+                        </div>
+                        <div class="settings-item">
+                            <input type="checkbox" id="notify-temp" checked>
+                            <label for="notify-temp">Экстремальные температуры</label>
+                        </div>
+                        <div class="settings-item">
+                            <input type="checkbox" id="notify-wind" checked>
+                            <label for="notify-wind">Сильный ветер</label>
+                        </div>
+                        <div class="settings-item">
+                            <input type="checkbox" id="notify-aqi">
+                            <label for="notify-aqi">Низкое качество воздуха</label>
+                        </div>
+                        <div class="settings-item">
+                            <input type="checkbox" id="notify-uv" checked>
+                            <label for="notify-uv">Высокий УФ-индекс</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="save-notification-settings" class="modal-btn primary">Сохранить</button>
+                    <button class="modal-btn close-modal">Отмена</button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <div class="footer-content">
+                <p>&copy; 2025 Погодка от Никитки</p>
+                <div class="footer-links">
+                    <button id="notification-settings-btn" title="Настройки уведомлений">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button id="theme-toggle" title="Сменить тему">
+                        <i id="theme-icon" class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- Подключение скриптов -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./script.js"></script>
+    <script src="./forecast.js"></script>
+    <script src="./map.js"></script>
+    <script src="./air-quality.js"></script>
+    <script src="./notifications.js"></script>
+    <script src="./service-worker-register.js"></script>
+</body>
+</html> 
